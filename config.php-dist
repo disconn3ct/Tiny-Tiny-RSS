@@ -107,6 +107,12 @@
 	define('SPHINX_ENABLED', false);
 	// Enable fulltext search using Sphinx (http://www.sphinxsearch.com)
 	// Please see http://tt-rss.org/wiki/SphinxSearch for more information.
+	
+    define('SPHINX_HOST', 'localhost');
+	// Hostname for the Sphinx server.
+
+	define('SPHINX_PORT', '9312');
+	// Listen port for the Sphinx server.
 
 	define('SPHINX_INDEX', 'ttrss');
 	// Index name in Sphinx configuration. You can specify multiple indexes
