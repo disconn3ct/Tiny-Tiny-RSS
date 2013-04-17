@@ -463,7 +463,10 @@ class Pref_Feeds extends Handler_Protected {
 			WHERE id = '$feed_id' AND owner_uid = ". $_SESSION["uid"]);
 
 		if (db_num_rows($result) != 0) {
-			unlink(ICONS_DIR . "/$feed_id.ico");
+			@unlink(ICONS_DIR . "/$feed_id.ico");
+
+			db_query($this->link, "UPDATE ttrss_feeds SET favicon_avg_color = NULL
+				where id = '$feed_id'");
 		}
 
 		return;
@@ -472,7 +475,22 @@ class Pref_Feeds extends Handler_Protected {
 	function uploadicon() {
 		header("Content-type: text/html");
 
-		$icon_file = $_FILES['icon_file']['tmp_name'];
+		$tmp_file = false;
+
+		if (is_uploaded_file($_FILES['icon_file']['tmp_name'])) {
+			$tmp_file = tempnam(CACHE_DIR . '/upload', 'icon');
+
+			$result = move_uploaded_file($_FILES['icon_file']['tmp_name'],
+				$tmp_file);
+
+			if (!$result) {
+				return;
+			}
+		} else {
+			return;
+		}
+
+		$icon_file = $tmp_file;
 		$feed_id = db_escape_string($this->link, $_REQUEST["feed_id"]);
 
 		if (is_file($icon_file) && $feed_id) {
@@ -482,9 +500,20 @@ class Pref_Feeds extends Handler_Protected {
 					WHERE id = '$feed_id' AND owner_uid = ". $_SESSION["uid"]);
 
 				if (db_num_rows($result) != 0) {
-					unlink(ICONS_DIR . "/$feed_id.ico");
-					move_uploaded_file($icon_file, ICONS_DIR . "/$feed_id.ico");
-					$rc = 0;
+					@unlink(ICONS_DIR . "/$feed_id.ico");
+					if (rename($icon_file, ICONS_DIR . "/$feed_id.ico")) {
+
+						require_once "colors.php";
+
+						$favicon_color = db_escape_string($this->link,
+							calculate_avg_color(ICONS_DIR . "/$feed_id.ico"));
+
+						db_query($this->link, "UPDATE ttrss_feeds SET
+							favicon_avg_color = '$favicon_color'
+							WHERE id = '$feed_id'");
+
+						$rc = 0;
+					}
 				} else {
 					$rc = 2;
 				}
@@ -494,6 +523,8 @@ class Pref_Feeds extends Handler_Protected {
 		} else {
 			$rc = 2;
 		}
+
+		@unlink($icon_file);
 
 		print "<script type=\"text/javascript\">";
 		print "parent.uploadIconHandler($rc);";
@@ -510,6 +541,9 @@ class Pref_Feeds extends Handler_Protected {
 		$result = db_query($this->link,
 			"SELECT * FROM ttrss_feeds WHERE id = '$feed_id' AND
 				owner_uid = " . $_SESSION["uid"]);
+
+		$auth_pass_encrypted = sql_bool_to_bool(db_fetch_result($result, 0,
+			"auth_pass_encrypted"));
 
 		$title = htmlspecialchars(db_fetch_result($result,
 			0, "title"));
@@ -596,7 +630,14 @@ class Pref_Feeds extends Handler_Protected {
 			placeHolder=\"".__("Login")."\"
 			name=\"auth_login\" value=\"$auth_login\"><hr/>";
 
-		$auth_pass = htmlspecialchars(db_fetch_result($result, 0, "auth_pass"));
+		$auth_pass = db_fetch_result($result, 0, "auth_pass");
+
+		if ($auth_pass_encrypted) {
+			require_once "crypt.php";
+			$auth_pass = decrypt_string($auth_pass);
+		}
+
+		$auth_pass = htmlspecialchars($auth_pass);
 
 		print "<input dojoType=\"dijit.form.TextBox\" type=\"password\" name=\"auth_pass\"
 			placeHolder=\"".__("Password")."\"
@@ -905,7 +946,7 @@ class Pref_Feeds extends Handler_Protected {
 		$feed_ids = db_escape_string($this->link, $_POST["ids"]); /* batchEditSave */
 		$cat_id = (int) db_escape_string($this->link, $_POST["cat_id"]);
 		$auth_login = db_escape_string($this->link, trim($_POST["auth_login"]));
-		$auth_pass = db_escape_string($this->link, trim($_POST["auth_pass"]));
+		$auth_pass = trim($_POST["auth_pass"]);
 		$private = checkbox_to_sql_bool(db_escape_string($this->link, $_POST["private"]));
 		$include_in_digest = checkbox_to_sql_bool(
 			db_escape_string($this->link, $_POST["include_in_digest"]));
@@ -918,6 +959,16 @@ class Pref_Feeds extends Handler_Protected {
 
 		$mark_unread_on_update = checkbox_to_sql_bool(
 			db_escape_string($this->link, $_POST["mark_unread_on_update"]));
+
+		if (strlen(FEED_CRYPT_KEY) > 0) {
+			require_once "crypt.php";
+			$auth_pass = substr(encrypt_string($auth_pass), 0, 250);
+			$auth_pass_encrypted = 'true';
+		} else {
+			$auth_pass_encrypted = 'false';
+		}
+
+		$auth_pass = db_escape_string($this->link, $auth_pass);
 
 		if (get_pref($this->link, 'ENABLE_FEED_CATS')) {
 			if ($cat_id && $cat_id != 0) {
@@ -941,6 +992,7 @@ class Pref_Feeds extends Handler_Protected {
 				purge_interval = '$purge_intl',
 				auth_login = '$auth_login',
 				auth_pass = '$auth_pass',
+				auth_pass_encrypted = $auth_pass_encrypted,
 				private = $private,
 				cache_images = $cache_images,
 				hide_images = $hide_images,
@@ -986,7 +1038,8 @@ class Pref_Feeds extends Handler_Protected {
 						break;
 
 					case "auth_pass":
-						$qpart = "auth_pass = '$auth_pass'";
+						$qpart = "auth_pass = '$auth_pass' AND
+							auth_pass_encrypted = $auth_pass_encrypted";
 						break;
 
 					case "private":
@@ -1805,7 +1858,7 @@ class Pref_Feeds extends Handler_Protected {
 		$cat_id = db_escape_string($this->link, $_REQUEST['cat']);
 		$feeds = explode("\n", $_REQUEST['feeds']);
 		$login = db_escape_string($this->link, $_REQUEST['login']);
-		$pass = db_escape_string($this->link, $_REQUEST['pass']);
+		$pass = trim($_REQUEST['pass']);
 
 		foreach ($feeds as $feed) {
 			$feed = db_escape_string($this->link, trim($feed));
@@ -1824,12 +1877,22 @@ class Pref_Feeds extends Handler_Protected {
 					"SELECT id FROM ttrss_feeds
 					WHERE feed_url = '$feed' AND owner_uid = ".$_SESSION["uid"]);
 
+				if (strlen(FEED_CRYPT_KEY) > 0) {
+					require_once "crypt.php";
+					$pass = substr(encrypt_string($pass), 0, 250);
+					$auth_pass_encrypted = 'true';
+				} else {
+					$auth_pass_encrypted = 'false';
+				}
+
+				$pass = db_escape_string($this->link, $pass);
+
 				if (db_num_rows($result) == 0) {
 					$result = db_query($this->link,
 						"INSERT INTO ttrss_feeds
-							(owner_uid,feed_url,title,cat_id,auth_login,auth_pass,update_method)
+							(owner_uid,feed_url,title,cat_id,auth_login,auth_pass,update_method,auth_pass_encrypted)
 						VALUES ('".$_SESSION["uid"]."', '$feed',
-							'[Unknown]', $cat_qpart, '$login', '$pass', 0)");
+							'[Unknown]', $cat_qpart, '$login', '$pass', 0, $auth_pass_encrypted)");
 				}
 
 				db_query($this->link, "COMMIT");

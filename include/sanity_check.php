@@ -55,12 +55,24 @@
 				array_push($errors, "Image cache is not writable (chmod -R 777 ".CACHE_DIR."/images)");
 			}
 
+			if (!is_writable(CACHE_DIR . "/upload")) {
+				array_push($errors, "Upload cache is not writable (chmod -R 777 ".CACHE_DIR."/upload)");
+			}
+
 			if (!is_writable(CACHE_DIR . "/export")) {
 				array_push($errors, "Data export cache is not writable (chmod -R 777 ".CACHE_DIR."/export)");
 			}
 
 			if (!is_writable(CACHE_DIR . "/js")) {
 				array_push($errors, "Javascript cache is not writable (chmod -R 777 ".CACHE_DIR."/js)");
+			}
+
+			if (strlen(FEED_CRYPT_KEY) > 0 && strlen(FEED_CRYPT_KEY) != 24) {
+				array_push($errors, "FEED_CRYPT_KEY should be exactly 24 characters in length.");
+			}
+
+			if (strlen(FEED_CRYPT_KEY) > 0 && !function_exists("mcrypt_decrypt")) {
+				array_push($errors, "FEED_CRYPT_KEY requires mcrypt functions which are not found.");
 			}
 
 			if (GENERATED_CONFIG_CHECK != EXPECTED_CONFIG_VERSION) {
@@ -100,10 +112,6 @@
 
 			if (!is_writable(LOCK_DIRECTORY)) {
 				array_push($errors, "LOCK_DIRECTORY defined in config.php is not writable (chmod -R 777 ".LOCK_DIRECTORY.").\n");
-			}
-
-			if (ini_get("open_basedir")) {
-				array_push($errors, "PHP configuration option open_basedir is not supported. Please disable this in PHP settings file (php.ini).");
 			}
 
 			if (!function_exists("curl_init") && !ini_get("allow_url_fopen")) {
