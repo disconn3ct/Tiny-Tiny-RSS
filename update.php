@@ -128,7 +128,7 @@
 	$lock_handle = make_lockfile($lock_filename);
 	$must_exit = false;
 
-	if (isset($options["task"])) {
+	if (isset($options["task"]) && isset($options["pidlock"])) {
 		$waits = $options["task"] * 5;
 		_debug("Waiting before update ($waits)");
 		sleep($waits);
@@ -320,7 +320,7 @@
 	if (isset($options["update-schema"])) {
 		_debug("checking for updates (" . DB_TYPE . ")...");
 
-		$updater = new DbUpdater( DB_TYPE, SCHEMA_VERSION);
+		$updater = new DbUpdater(Db::get(), DB_TYPE, SCHEMA_VERSION);
 
 		if ($updater->isUpdateRequired()) {
 			_debug("schema update required, version " . $updater->getSchemaVersion() . " to " . SCHEMA_VERSION);

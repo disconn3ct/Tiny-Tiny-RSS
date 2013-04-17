@@ -5,14 +5,14 @@ class Logger_SQL {
 
 		if ($errno == E_NOTICE) return false;
 
-		if (Db::get()) {
+		if (Db::get() && get_schema_version() > 117) {
 
 			$errno = Db::get()->escape_string($errno);
 			$errstr = Db::get()->escape_string($errstr);
 			$file = Db::get()->escape_string($file);
 			$line = Db::get()->escape_string($line);
 			$context = ''; // backtrace is a lot of data which is not really critical to store
-			//$context = db_escape_string(serialize($context));
+			//$context = $this->dbh->escape_string(serialize($context));
 
 			$owner_uid = $_SESSION["uid"] ? $_SESSION["uid"] : "NULL";
 
