@@ -164,7 +164,7 @@ class GoogleReaderImport extends Plugin {
 					$processed++;
 
 					$imported += (int) $this->create_article($owner_uid, $guid, $title,
-						$updated,  $content, $author, $sql_set_marked, $tags,
+						$link, $updated,  $content, $author, $sql_set_marked, $tags,
 						$orig_feed_data);
 
 					if ($file && $processed % 25 == 0) {
@@ -196,7 +196,7 @@ class GoogleReaderImport extends Plugin {
 	}
 
 	// expects ESCAPED data
-	private function create_article($owner_uid, $guid, $title, $updated,  $content, $author, $marked, $tags, $orig_feed_data) {
+	private function create_article($owner_uid, $guid, $title, $link, $updated,  $content, $author, $marked, $tags, $orig_feed_data) {
 
 		if (!$guid) $guid = sha1($link);
 
@@ -374,5 +374,10 @@ class GoogleReaderImport extends Plugin {
 
 		print "</div>"; #pane
 	}
+
+	function api_version() {
+		return 2;
+	}
+
 }
 ?>
