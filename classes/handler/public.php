@@ -368,14 +368,7 @@ class Handler_Public extends Handler {
 		include "rssfuncs.php";
 		// Update all feeds needing a update.
 		update_daemon_common(0, true, false);
-
-		// Update feedbrowser
-		update_feedbrowser_cache();
-
-		// Purge orphans and cleanup tags
-		purge_orphans();
-
-		cleanup_tags(14, 50000);
+		housekeeping_common(false);
 
 		PluginHost::getInstance()->run_hooks(PluginHost::HOOK_UPDATE_TASK, "hook_update_task", $op);
 
@@ -485,14 +478,6 @@ class Handler_Public extends Handler {
 				<tr><td align="right"><?php echo __("Password:") ?></td>
 				<td align="right"><input type="password" name="password"
 				value="<?php echo $_SESSION["fake_password"] ?>"></td></tr>
-			<tr><td align="right"><?php echo __("Language:") ?></td>
-			<td align="right">
-			<?php
-				print_select_hash("language", $_COOKIE["ttrss_lang"], get_translations(),
-					"style='width : 100%''");
-
-			?>
-			</td></tr>
 			<tr><td colspan='2'>
 				<button type="submit">
 					<?php echo __('Log in') ?></button>
@@ -525,7 +510,10 @@ class Handler_Public extends Handler {
 			if (authenticate_user($login, $password)) {
 				$_POST["password"] = "";
 
-				$_SESSION["language"] = $_POST["language"];
+				if (get_schema_version() >= 120) {
+					$_SESSION["language"] = get_pref("USER_LANGUAGE", $_SESSION["uid"]);
+				}
+
 				$_SESSION["ref_schema_version"] = get_schema_version(true);
 				$_SESSION["bw_limit"] = !!$_POST["bw_limit"];
 

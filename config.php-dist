@@ -139,10 +139,6 @@
 	define('SESSION_COOKIE_LIFETIME', 86400);
 	// Default lifetime of a session (e.g. login) cookie. In seconds, 
 	// 0 means cookie will be deleted when browser closes.
-	// Setting this to zero will affect several user preferences
-	// like widescreen mode not saving and disable "remember me".
-	// Note that if remember me is not checked, session cookie
-	// will always expire with browser session.
 
 	define('SESSION_CHECK_ADDRESS', 1);
 	// Check client IP address when validating session:
@@ -192,6 +188,8 @@
 	// authentication plugin here (auth_*).
 	// Users may enable other user plugins from Preferences/Plugins but may not
 	// disable plugins specified in this list.
+	// Disabling auth_internal in this list would automatically disable
+	// reset password link on the login form.
 	
 	define('LOG_DESTINATION', 'sql');
 	// Log destination to use. Possible values: sql (uses internal logging

@@ -40,6 +40,8 @@ function setActiveFeedId(id, is_cat) {
 		$("headlines-frame").setAttribute("is-cat", is_cat ? 1 : 0);
 
 		selectFeed(id, is_cat);
+
+		PluginHost.run(PluginHost.HOOK_FEED_SET_ACTIVE, _active_article_id);
 	} catch (e) {
 		exception_error("setActiveFeedId", e);
 	}
@@ -254,10 +256,12 @@ function init() {
 		var hasAudio = !!a.canPlayType;
 		var hasSandbox = "sandbox" in document.createElement("iframe");
 		var hasMp3 = !!(a.canPlayType && a.canPlayType('audio/mpeg;').replace(/no/, ''));
+		var clientTzOffset = new Date().getTimezoneOffset() * 60;
 
 		new Ajax.Request("backend.php",	{
 			parameters: {op: "rpc", method: "sanityCheck", hasAudio: hasAudio,
 				hasMp3: hasMp3,
+			 	clientTzOffset: clientTzOffset,
 				hasSandbox: hasSandbox},
 			onComplete: function(transport) {
 					backend_sanity_check_callback(transport);
@@ -307,7 +311,7 @@ function init() {
 				var id = getActiveArticleId();
 				var elem = $("CICD-"+id);
 				if(elem.visible()) {
-					cdmUnexpandArticle(null, id);
+					cdmCollapseArticle(null, id, false);
 				}
 				else {
 					cdmExpandArticle(id);
@@ -328,7 +332,7 @@ function init() {
 		hotkey_actions["edit_tags"] = function() {
 				var id = getActiveArticleId();
 				if (id) {
-					editArticleTags(id, getActiveFeedId(), isCdmMode());
+					editArticleTags(id);
 				};
 			}
 		hotkey_actions["dismiss_selected"] = function() {
@@ -749,6 +753,8 @@ function parse_runtime_info(data) {
 		init_params[k] = v;
 		notify('');
 	}
+
+	PluginHost.run(PluginHost.HOOK_RUNTIME_INFO_LOADED, data);
 }
 
 function collapse_feedlist() {
@@ -988,7 +994,7 @@ function handle_rpc_json(transport, scheduled_call) {
 			if (counters)
 				parse_counters(counters, scheduled_call);
 
-			var runtime_info = reply['runtime-info'];;
+			var runtime_info = reply['runtime-info'];
 
 			if (runtime_info)
 				parse_runtime_info(runtime_info);

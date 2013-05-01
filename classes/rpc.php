@@ -334,6 +334,7 @@ class RPC extends Handler_Protected {
 		$_SESSION["hasAudio"] = $_REQUEST["hasAudio"] === "true";
 		$_SESSION["hasSandbox"] = $_REQUEST["hasSandbox"] === "true";
 		$_SESSION["hasMp3"] = $_REQUEST["hasMp3"] === "true";
+		$_SESSION["clientTzOffset"] = $_REQUEST["clientTzOffset"];
 
 		$reply = array();
 
@@ -478,7 +479,7 @@ class RPC extends Handler_Protected {
 		$wide = (int) $_REQUEST["wide"];
 
 		setcookie("ttrss_widescreen", $wide,
-			time() + SESSION_COOKIE_LIFETIME);
+			time() + COOKIE_LIFETIME_LONG);
 
 		print json_encode(array("wide" => $wide));
 	}

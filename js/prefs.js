@@ -962,8 +962,11 @@ function init() {
 		dojo.addOnLoad(function() {
 			loading_set_progress(50);
 
+			var clientTzOffset = new Date().getTimezoneOffset() * 60;
+
 			new Ajax.Request("backend.php", {
-				parameters: {op: "rpc", method: "sanityCheck"},
+				parameters: {op: "rpc", method: "sanityCheck",
+				 	clientTzOffset: clientTzOffset },
 					onComplete: function(transport) {
 					backend_sanity_check_callback(transport);
 				} });
@@ -1830,3 +1833,21 @@ function clearPluginData(name) {
 		exception_error("clearPluginData", e);
 	}
 }
+
+function clearSqlLog() {
+
+	if (confirm(__("Clear all messages in the error log?"))) {
+
+		notify_progress("Loading, please wait...");
+		var query = "?op=pref-system&method=clearLog";
+
+		new Ajax.Request("backend.php",	{
+			parameters: query,
+			onComplete: function(transport) {
+				updateSystemList();
+			} });
+
+	}
+}
+
+

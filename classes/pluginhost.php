@@ -34,6 +34,8 @@ class PluginHost {
 	const HOOK_HEADLINE_TOOLBAR_BUTTON = 17;
 	const HOOK_HOTKEY_INFO = 18;
 	const HOOK_ARTICLE_LEFT_BUTTON = 19;
+	const HOOK_PREFS_EDIT_FEED = 20;
+	const HOOK_PREFS_SAVE_FEED = 21;
 
 	const KIND_ALL = 1;
 	const KIND_SYSTEM = 2;
@@ -41,9 +43,8 @@ class PluginHost {
 
 	function __construct() {
 		$this->dbh = Db::get();
-		$this->storage = $_SESSION["plugin_storage"];
 
-		if (!$this->storage) $this->storage = array();
+		$this->storage = array();
 	}
 
 	private function __clone() {
@@ -250,7 +251,7 @@ class PluginHost {
 	}
 
 	function load_data($force = false) {
-		if ($this->owner_uid && (!$_SESSION["plugin_storage"] || $force))  {
+		if ($this->owner_uid)  {
 			$plugin = $this->dbh->escape_string($plugin);
 
 			$result = $this->dbh->query("SELECT name, content FROM ttrss_plugin_storage
@@ -259,8 +260,6 @@ class PluginHost {
 			while ($line = $this->dbh->fetch_assoc($result)) {
 				$this->storage[$line["name"]] = unserialize($line["content"]);
 			}
-
-			$_SESSION["plugin_storage"] = $this->storage;
 		}
 	}
 
@@ -300,8 +299,6 @@ class PluginHost {
 
 		$this->storage[$idx][$name] = $value;
 
-		$_SESSION["plugin_storage"] = $this->storage;
-
 		if ($sync) $this->save_data(get_class($sender));
 	}
 
@@ -329,8 +326,6 @@ class PluginHost {
 
 			$this->dbh->query("DELETE FROM ttrss_plugin_storage WHERE name = '$idx'
 				AND owner_uid = " . $this->owner_uid);
-
-			$_SESSION["plugin_storage"] = $this->storage;
 		}
 	}
 

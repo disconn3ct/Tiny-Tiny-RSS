@@ -500,14 +500,8 @@ class Pref_Feeds extends Handler_Protected {
 				if ($this->dbh->num_rows($result) != 0) {
 					@unlink(ICONS_DIR . "/$feed_id.ico");
 					if (rename($icon_file, ICONS_DIR . "/$feed_id.ico")) {
-
-						require_once "colors.php";
-
-						$favicon_color = $this->dbh->escape_string(
-							calculate_avg_color(ICONS_DIR . "/$feed_id.ico"));
-
 						$this->dbh->query("UPDATE ttrss_feeds SET
-							favicon_avg_color = '$favicon_color'
+							favicon_avg_color = ''
 							WHERE id = '$feed_id'");
 
 						$rc = 0;
@@ -747,6 +741,9 @@ class Pref_Feeds extends Handler_Protected {
 			</form>";
 
 		print "</div>";
+
+		PluginHost::getInstance()->run_hooks(PluginHost::HOOK_PREFS_EDIT_FEED,
+			"hook_prefs_edit_feed", $feed_id);
 
 		$title = htmlspecialchars($title, ENT_QUOTES);
 
@@ -998,6 +995,9 @@ class Pref_Feeds extends Handler_Protected {
 				always_display_enclosures = $always_display_enclosures,
 				mark_unread_on_update = $mark_unread_on_update
 			WHERE id = '$feed_id' AND owner_uid = " . $_SESSION["uid"]);
+
+			PluginHost::getInstance()->run_hooks(PluginHost::HOOK_PREFS_SAVE_FEED,
+				"hook_prefs_save_feed", $feed_id);
 
 		} else {
 			$feed_data = array();

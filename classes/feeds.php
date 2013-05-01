@@ -11,7 +11,7 @@ class Feeds extends Handler_Protected {
 
 	private function format_headline_subtoolbar($feed_site_url, $feed_title,
 			$feed_id, $is_cat, $search,
-			$search_mode, $view_mode, $error) {
+			$search_mode, $view_mode, $error, $feed_last_updated) {
 
 		$page_prev_link = "viewFeedGoPage(-1)";
 		$page_next_link = "viewFeedGoPage(1)";
@@ -53,8 +53,11 @@ class Feeds extends Handler_Protected {
 		$reply .= "<span id='feed_title'>";
 
 		if ($feed_site_url) {
+			$last_updated = T_sprintf("Last updated: %s",
+				$feed_last_updated);
+
 			$target = "target=\"_blank\"";
-			$reply .= "<a title=\"".__("Visit the website")."\" $target href=\"$feed_site_url\">".
+			$reply .= "<a title=\"$last_updated\" $target href=\"$feed_site_url\">".
 				truncate_string($feed_title,30)."</a>";
 
 			if ($error) {
@@ -247,13 +250,15 @@ class Feeds extends Handler_Protected {
 		$feed_title = $qfh_ret[1];
 		$feed_site_url = $qfh_ret[2];
 		$last_error = $qfh_ret[3];
+		$last_updated = strpos($qfh_ret[4], '1970-') === FALSE ?
+			make_local_datetime($qfh_ret[4], false) : __("Never");
 
 		$vgroup_last_feed = $vgr_last_feed;
 
 		$reply['toolbar'] = $this->format_headline_subtoolbar($feed_site_url,
 			$feed_title,
 			$feed, $cat_view, $search, $search_mode, $view_mode,
-			$last_error);
+			$last_error, $last_updated);
 
 		$headlines_count = $this->dbh->num_rows($result);
 
@@ -357,7 +362,7 @@ class Feeds extends Handler_Protected {
 
 				if (get_pref('SHOW_CONTENT_PREVIEW')) {
 					$content_preview = truncate_string(strip_tags($line["content_preview"]),
-						100);
+						250);
 				}
 
 				$score = $line["score"];
@@ -400,7 +405,7 @@ class Feeds extends Handler_Protected {
 
 				require_once "colors.php";
 
-				if ($fav_color) {
+				if ($fav_color && $fav_color != 'fail') {
 					if (!isset($rgba_cache[$feed_id])) {
 						$rgba_cache[$feed_id] = join(",", _color_unpack($fav_color));
 					}
@@ -550,7 +555,7 @@ class Feeds extends Handler_Protected {
 					$expanded_class = $expand_cdm ? "expanded" : "expandable";
 
 					$reply['content'] .= "<div class=\"cdm $expanded_class $class\"
-						id=\"RROW-$id\" $mouseover_attrs'>";
+						id=\"RROW-$id\" $mouseover_attrs>";
 
 					$reply['content'] .= "<div class=\"cdmHeader\" style=\"$row_background\">";
 					$reply['content'] .= "<div style=\"vertical-align : middle\">";
@@ -682,7 +687,7 @@ class Feeds extends Handler_Protected {
 					$reply['content'] .= "<img src='images/tag.png' alt='Tags' title='Tags'>
 						<span id=\"ATSTR-$id\">$tags_str</span>
 						<a title=\"".__('Edit tags for this article')."\"
-						href=\"#\" onclick=\"editArticleTags($id, $feed_id, true)\">(+)</a>";
+						href=\"#\" onclick=\"editArticleTags($id)\">(+)</a>";
 
 					$num_comments = $line["num_comments"];
 					$entry_comments = "";
