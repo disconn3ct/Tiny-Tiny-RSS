@@ -1162,7 +1162,7 @@
 
 		$data = array_merge($data, getVirtCounters());
 		$data = array_merge($data, getLabelCounters());
-		$data = array_merge($data, getFeedCounters($active_feed));
+		$data = array_merge($data, getFeedCounters());
 		$data = array_merge($data, getCategoryCounters());
 
 		return $data;
@@ -1286,7 +1286,7 @@
 
 			return $unread;
 		} else if ($cat == -1) {
-			return getFeedUnread(-1) + getFeedUnread($link, -2) + getFeedUnread($link, -3) + getFeedUnread($link, 0);
+			return getFeedUnread(-1) + getFeedUnread(-2) + getFeedUnread(-3) + getFeedUnread(0);
 		} else if ($cat == -2) {
 
 			$result = db_query("
@@ -1661,7 +1661,7 @@
 			$feed_id = db_fetch_result($result, 0, "id");
 
 			if ($feed_id) {
-				update_rss_feed($feed_id, true);
+				update_rss_feed($feed_id, false, false, false, $contents);
 			}
 
 			return array("code" => 1);
@@ -1726,7 +1726,8 @@
 			}
 
 			if (!$root_id) {
-				$is_selected = ($default_id == "CAT:0") ? "selected=\"1\"" : "";
+				$default_is_cat = ($default_id == "CAT:0");
+				$is_selected = $default_is_cat ? "selected=\"1\"" : "";
 
 				printf("<option $is_selected value='CAT:0'>%s</option>",
 					__("Uncategorized"));
@@ -2902,7 +2903,6 @@
 			ttrss_tags WHERE post_int_id = (SELECT int_id FROM ttrss_user_entries WHERE
 			ref_id = '$a_id' AND owner_uid = '$owner_uid' LIMIT 1) ORDER BY tag_name";
 
-		$obj_id = md5("TAGS:$owner_uid:$id");
 		$tags = array();
 
 		/* check cache first */
@@ -3249,7 +3249,7 @@
 
 	function print_checkpoint($n, $s) {
 		$ts = microtime(true);
-		echo sprintf("<!-- CP[$n] %.4f seconds -->", $ts - $s);
+		echo sprintf("<!-- CP[$n] %.4f seconds -->\n", $ts - $s);
 		return $ts;
 	}
 
@@ -3392,47 +3392,22 @@
 	}
 
 	function format_tags_string($tags, $id) {
+		if (!is_array($tags) || count($tags) == 0) {
+			return __("no tags");
+		} else {
+			$maxtags = min(5, count($tags));
 
-		$tags_str = "";
-		$tags_nolinks_str = "";
-
-		$num_tags = 0;
-
-		$tag_limit = 6;
-
-		$formatted_tags = array();
-
-		foreach ($tags as $tag) {
-			$num_tags++;
-			$tag_escaped = str_replace("'", "\\'", $tag);
-
-			if (mb_strlen($tag) > 30) {
-				$tag = truncate_string($tag, 30);
+			for ($i = 0; $i < $maxtags; $i++) {
+				$tags_str .= "<a href=\"#\" onclick=\"viewfeed('".$tags[$i]."'\")>" . $tags[$i] . "</a>, ";
 			}
 
-			$tag_str = "<a href=\"javascript:viewfeed('$tag_escaped')\">$tag</a>";
+			$tags_str = mb_substr($tags_str, 0, mb_strlen($tags_str)-2);
 
-			array_push($formatted_tags, $tag_str);
+			if (count($tags) > $maxtags)
+				$tags_str .= ", &hellip;";
 
-			$tmp_tags_str = implode(", ", $formatted_tags);
-
-			if ($num_tags == $tag_limit || mb_strlen($tmp_tags_str) > 150) {
-				break;
-			}
+			return $tags_str;
 		}
-
-		$tags_str = implode(", ", $formatted_tags);
-
-		if ($num_tags < count($tags)) {
-			$tags_str .= ", &hellip;";
-		}
-
-		if ($num_tags == 0) {
-			$tags_str = __("no tags");
-		}
-
-		return $tags_str;
-
 	}
 
 	function format_article_labels($labels, $id) {
@@ -4125,7 +4100,7 @@
 				preg_match("/(Location:|URI:)[^(\n)]*/", $header, $matches);
 				$url = trim(str_replace($matches[1],"",$matches[0]));
 				$url_parsed = parse_url($url);
-				return (isset($url_parsed))? geturl($url, $referer):'';
+				return (isset($url_parsed))? geturl($url):'';
 			}
 			$oline='';
 			foreach($status as $key=>$eline){$oline.='['.$key.']'.$eline.' ';}

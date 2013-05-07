@@ -288,8 +288,6 @@ class Feeds extends Handler_Protected {
 			$expand_cdm = get_pref('CDM_EXPANDED');
 
 			while ($line = $this->dbh->fetch_assoc($result)) {
-				$class = ($lnum % 2) ? "even" : "odd";
-
 				$id = $line["id"];
 				$feed_id = $line["feed_id"];
 				$label_cache = $line["label_cache"];
@@ -315,6 +313,8 @@ class Feeds extends Handler_Protected {
 				if (count($topmost_article_ids) < 3) {
 					array_push($topmost_article_ids, $id);
 				}
+
+				$class = "";
 
 				if (sql_bool_to_bool($line["unread"])) {
 					$class .= " Unread";
@@ -514,8 +514,10 @@ class Feeds extends Handler_Protected {
 
 				} else {
 
-					$line["tags"] = get_article_tags($id, $_SESSION["uid"], $line["tag_cache"]);
-					unset($line["tag_cache"]);
+					if ($line["tag_cache"])
+						$tags = explode(",", $line["tag_cache"]);
+					else
+						$tags = false;
 
 					$line["content"] = sanitize($line["content_preview"],
 							sql_bool_to_bool($line['hide_images']), false, $entry_site_url);
@@ -627,7 +629,6 @@ class Feeds extends Handler_Protected {
 					}
 					$reply['content'] .= "</div>";
 
-
 					$reply['content'] .= "<div class=\"cdmContentInner\">";
 
 			if ($line["orig_feed_id"]) {
@@ -682,7 +683,7 @@ class Feeds extends Handler_Protected {
 						$reply['content'] .= $p->hook_article_left_button($line);
 					}
 
-					$tags_str = format_tags_string($line["tags"], $id);
+					$tags_str = format_tags_string($tags, $id);
 
 					$reply['content'] .= "<img src='images/tag.png' alt='Tags' title='Tags'>
 						<span id=\"ATSTR-$id\">$tags_str</span>

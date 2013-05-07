@@ -139,8 +139,10 @@ a:hover {
 	position : absolute;	
 	font-size : 12px;
 	z-index : 99;
+	max-width : 200px;
+	min-width : 100px;
 	padding : 5px;
-	min-width : 200px;
+	-width : 200px;
 	box-shadow : 0px 0px 2px #ccc;
 }
 
@@ -187,17 +189,12 @@ a:hover {
 	font-weight : bold;
 }
 
-.hl.even.Grayed {
-	background : #f0f0f0;
+.hl.Grayed {
 	color : #909090;
-	border-width : 0px 0px 1px 0px;
-	border-style : solid;
-	border-color : #c0c0c0;
-	border-collapse : collapse;
 }
 
-.hl.odd.Grayed {
-	color : #909090;
+#headlines-frame div.hl:nth-child(even) {
+	background : #f0f0f0;
 }
 
 .hl {
@@ -208,15 +205,6 @@ a:hover {
 
 .hl.active {
 	background : #ecf4ff ! important;
-}
-
-.hl.even {
-	background : #f0f0f0;
-	border-collapse : collapse;
-}
-
-.hl.odd {
-	background : white;
 }
 
 div.filterTestHolder {
@@ -780,7 +768,7 @@ div.fatalError textarea {
 
 #feeds-holder {
 	padding : 0px;
-	border-color : #88b0f0;
+	border-color : #c0c0c0;
 	border-left-width : 0px;
 	border-bottom-width : 0px;
 	border-top-width : 0px;
@@ -793,13 +781,9 @@ div.fatalError textarea {
 	border-width : 0px;
 }
 
-#feedTree {
-	overflow : visible;
-}
-
 #headlines-frame {
 	padding : 0px;
-	border-color : #88b0f0;
+	border-color : #c0c0c0;
 	border-left-width : 0px;
 	border-right-width : 0px;
 	margin-top : 0px;
@@ -839,7 +823,7 @@ div.fatalError textarea {
 
 #content-insert {
 	padding : 0px;
-	border-color : #88b0f0;
+	border-color : #c0c0c0;
 	border-bottom-width : 0px;
 	border-right-width : 0px;
 	border-left-width : 0px;
@@ -966,6 +950,7 @@ ul.helpKbList h2 {
 
 .dijitTreeNode .loadingNode {
 	margin-left : 3px;
+	height : 9px;
 }
 
 span.collapseBtn {
@@ -1034,3 +1019,37 @@ div.hl.active a.title {
 #selected_prompt {
 	margin-right : 25px;
 }
+
+#feedTree .dijitTreeRow, #feedTree .dijitFocused {
+	padding : 1px 0px 1px;
+	border-width : 1px;
+	border-color : transparent;
+}
+
+#feedTree .dijitTreeNode {
+	padding : 0px;
+	border-width : 0px;
+}
+
+#feedTree { 
+	height : 100%;
+	overflow-x : hidden;
+}
+
+#feedTree span.counterNode {
+	display : none;
+}
+
+#feedTree span.counterNode.unread {
+	font-weight : bold;
+	display : inline-block;
+	font-size : 9px;
+	text-align : center;
+	border : 1px solid #88b0f0;
+	color : white;
+	background : #88b0f0;
+	border-radius : 4px;
+	padding : 0px 4px 0px 4px;
+	vertical-align : middle;
+}
+

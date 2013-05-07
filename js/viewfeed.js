@@ -20,8 +20,6 @@ function headlines_callback2(transport, offset, background, infscroll_req) {
 	try {
 		handle_rpc_json(transport);
 
-		loading_set_progress(25);
-
 		console.log("headlines_callback2 [offset=" + offset + "] B:" + background + " I:" + infscroll_req);
 
 		var is_cat = false;
@@ -135,8 +133,6 @@ function headlines_callback2(transport, offset, background, infscroll_req) {
 					});
 
 					if (!hsp) hsp = new Element("DIV", {"id": "headlines-spacer"});
-
-					fixHeadlinesOrder(getLoadedArticleIds());
 
 					if (getInitParam("cdm_auto_catchup") == 1) {
 						c.domNode.appendChild(hsp);
@@ -1418,6 +1414,8 @@ function cdmCollapseArticle(event, id, unmark) {
 				if (id == getActiveArticleId()) {
 					setActiveArticleId(0);
 				}
+
+				updateSelectedPrompt();
 			}
 
 			if (event) Event.stop(event);
@@ -1496,26 +1494,6 @@ function cdmExpandArticle(id, noexpand) {
 	}
 
 	return false;
-}
-
-function fixHeadlinesOrder(ids) {
-	try {
-		for (var i = 0; i < ids.length; i++) {
-			var e = $("RROW-" + ids[i]);
-
-			if (e) {
-				if (i % 2 == 0) {
-					e.removeClassName("even");
-					e.addClassName("odd");
-				} else {
-					e.removeClassName("odd");
-					e.addClassName("even");
-				}
-			}
-		}
-	} catch (e) {
-		exception_error("fixHeadlinesOrder", e);
-	}
 }
 
 function getArticleUnderPointer() {
@@ -1598,7 +1576,6 @@ function dismissSelectedArticles() {
 		if (sel.length > 0)
 			selectionToggleUnread(false);
 
-		fixHeadlinesOrder(tmp);
 
 	} catch (e) {
 		exception_error("dismissSelectedArticles", e);
@@ -1622,8 +1599,6 @@ function dismissReadArticles() {
 				tmp.push(ids[i]);
 			}
 		}
-
-		fixHeadlinesOrder(tmp);
 
 	} catch (e) {
 		exception_error("dismissSelectedArticles", e);
